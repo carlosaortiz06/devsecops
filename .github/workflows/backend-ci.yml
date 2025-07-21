@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'prueba-backend/**'
+      - 'backend-ci.yml'
   pull_request:
     paths:
       - 'prueba-backend/**'
@@ -40,11 +41,11 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 
-    #   - name: Dependency Check
-    #     uses: dependency-check/Dependency-Check_Action@main
-    #     with:
-    #       project: prueba-backend
-    #       path: prueba-backend
+      - name: Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: prueba-backend
+          path: prueba-backend
 
       - name: Build Docker Image
         run: docker build -t backend:latest prueba-backend
