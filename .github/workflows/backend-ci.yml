@@ -33,7 +33,7 @@ jobs:
         run: mvn clean verify
 
       - name: Run SonarCloud Analysis with Maven
-        run: mvn clean verify sonar:sonar -Dsonar.projectKey=your_project_key -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        run: mvn clean verify sonar:sonar -Dsonar.projectKey=carlosaortiz06_devsecops -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         working-directory: prueba-backend
 
     #   - name: Scan for secrets with Gitleaks
