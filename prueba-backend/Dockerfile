@@ -1,7 +1,8 @@
 # Etapa 1: Build
-FROM eclipse-temurin:17-jdk-alpine as builder
+FROM eclipse-temurin:17-jdk-alpine AS builder
 WORKDIR /app
 COPY . .
+RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests
 
 # Etapa 2: Imagen final
