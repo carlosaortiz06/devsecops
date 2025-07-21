@@ -47,7 +47,13 @@ jobs:
           sudo mv trivy /usr/local/bin/
 
       - name: Scan dependencies with Trivy
-        run: trivy fs --scanners vuln --format table --severity HIGH,CRITICAL .
+        run: trivy fs --scanners vuln --format html --severity HIGH,CRITICAL --output trivy_report.html .
+
+      - name: Upload Trivy HTML report as artifact
+        uses: actions/upload-artifact@v2
+        with:
+            name: trivy-html-report
+            path: trivy_report.html        
 
 
       - name: Build Docker Image
