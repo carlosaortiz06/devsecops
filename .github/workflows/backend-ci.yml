@@ -40,7 +40,11 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-
+      - name: Install Trivy
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.tar.gz
+          tar zxvf trivy_0.50.1_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
 
       - name: Scan dependencies with Trivy
         run: trivy fs --scanners vuln --format table --severity HIGH,CRITICAL .
