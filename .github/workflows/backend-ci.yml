@@ -47,7 +47,7 @@ jobs:
           sudo mv trivy /usr/local/bin/
 
       - name: Scan dependencies with Trivy
-        run: trivy fs --scanners vuln --format html --severity HIGH,CRITICAL --output trivy_report.html .
+        run: trivy fs --scanners vuln --format template --template "@trivy-report.tpl" --severity HIGH,CRITICAL --output trivy_report.html .
 
       - name: Upload Trivy HTML report as artifact
         uses: actions/upload-artifact@v4
