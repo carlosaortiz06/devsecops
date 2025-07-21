@@ -33,6 +33,12 @@ jobs:
         working-directory: prueba-backend
         run: mvn clean verify
 
+      - name: Install Git Secrets
+        run: |
+            sudo apt-get update
+            sudo apt-get install git-secrets
+
+
       - name: Scan for secrets
         run: |
             git secrets --scan
