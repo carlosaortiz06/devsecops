@@ -41,11 +41,10 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 
-      - name: Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: prueba-backend
-          path: prueba-backend
+
+      - name: Scan dependencies with Trivy
+        run: trivy fs --scanners vuln --format table --severity HIGH,CRITICAL .
+
 
       - name: Build Docker Image
         run: docker build -t backend:latest prueba-backend
