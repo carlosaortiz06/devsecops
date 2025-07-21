@@ -33,6 +33,11 @@ jobs:
         working-directory: prueba-backend
         run: mvn clean verify
 
+      - name: Scan for secrets
+        run: |
+            git secrets --scan
+
+
       - name: Run SonarCloud Analysis
         uses: SonarSource/sonarcloud-github-action@v2
         with:
