@@ -39,10 +39,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-    #   - name: Scan for secrets with Gitleaks
-    #     uses: gitleaks/gitleaks-action@v2
-    #     with:
-    #       args: "--path=."
 
     #   - name: Dependency Check
     #     uses: dependency-check/Dependency-Check_Action@main
@@ -53,7 +49,23 @@ jobs:
       - name: Build Docker Image
         run: docker build -t backend:latest prueba-backend
 
-    #   - name: Scan Docker Image with Trivy
-    #     uses: aquasecurity/trivy-action@master
-    #     with:
-    #       image-ref: backend:latest
+      - name: Install Trivy CLI
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.tar.gz
+          tar zxvf trivy_0.50.1_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
+
+      - name: Download HTML template
+        run: |
+          mkdir -p contrib
+          wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O contrib/html.tpl
+
+      - name: Scan Docker Image with Trivy and generate HTML report
+        run: |
+          trivy image --format template --template "@contrib/html.tpl" -o trivy-report.html backend:latest
+
+      - name: Upload Trivy HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-html-report
+          path: trivy-report.html
