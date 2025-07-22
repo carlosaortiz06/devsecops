@@ -180,6 +180,3 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         continue-on-error: false
 
-      - name: Deploy to ECS for Frontend
-        run: |
-          aws ecs update-service --cluster my-frontend-cluster --service my-frontend-service --force-new-deployment --region us-east-1
