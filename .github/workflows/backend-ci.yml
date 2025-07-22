@@ -1,196 +1,185 @@
-name: CI/CD - Backend
+name: CI/CD - Frontend & Backend
 
 # on:
 #   push:
 #     paths:
 #       - 'prueba-backend/**'
 #       - 'backend-ci.yml'
+#       - 'prueba-frontend/**'
+#       - 'frontend-ci.yml'
 #   pull_request:
 #     paths:
 #       - 'prueba-backend/**'
+#       - 'backend-ci.yml'
+#       - 'prueba-frontend/**'
+#       - 'frontend-ci.yml'
 
 jobs:
-  build-test-analyze:
+  # Backend Job
+  build-test-analyze-backend:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout code for Backend
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 17 for Backend
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Cache Maven packages
+      - name: Cache Maven packages for Backend
         uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven
 
-      - name: Build and test
+      - name: Build and test Backend
         working-directory: prueba-backend
         run: mvn clean verify
 
-      - name: Install Git Secrets
+      - name: Install Git Secrets for Backend
         run: |
             sudo apt-get update
             sudo apt-get install git-secrets
 
-
-      - name: Scan for secrets
+      - name: Scan for secrets in Backend
         run: |
             git secrets --scan
 
-
-      - name: Run SonarCloud Analysis
+      - name: Run SonarCloud Analysis for Backend
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: prueba-backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Install Trivy
+      - name: Install Trivy for Backend
         run: |
           wget https://github.com/aquasecurity/trivy/releases/download/v0.50.1/trivy_0.50.1_Linux-64bit.tar.gz
           tar zxvf trivy_0.50.1_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/
 
-      - name: Scan dependencies with Trivy
+      - name: Scan Backend dependencies with Trivy
         run: trivy fs --scanners vuln --format json --severity HIGH,CRITICAL --output trivy_report.json .
 
-      - name: List files after Trivy scan
+      - name: List files after Trivy scan for Backend
         run: ls -la
 
-      - name: Upload Trivy JSON report as artifact
+      - name: Upload Trivy JSON report for Backend
         uses: actions/upload-artifact@v4
         with:
-            name: trivy-json-report
+            name: trivy-json-report-backend
             path: trivy_report.json
 
-
-      - name: Build Docker Image
+      - name: Build Docker Image for Backend
         run: docker build -t backend:latest prueba-backend
 
-      - name: Scan Docker Image with Trivy
+      - name: Scan Docker Image with Trivy for Backend
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: backend:latest
 
+      # Backend Deployment (Only if no issues)
+      - name: Check for critical vulnerabilities in Backend
+        run: |
+          vulnerabilities=$(jq '.[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")' trivy_report.json)
+          if [ -n "$vulnerabilities" ]; then
+            echo "Critical vulnerabilities detected in Backend, aborting deployment."
+            exit 1
+          fi
 
-      # Paso 14: Configuración de credenciales de AWS para interactuar con ECS
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: SonarCloud Quality Gate Check for Backend
+        uses: SonarSource/sonarcloud-github-action@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  
+          projectBaseDir: prueba-backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        continue-on-error: false
 
-      # Paso 2: Log in to Amazon ECR
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-
-      # Paso 3: Tag Docker image for ECR
-      - name: Tag Docker image for ECR
+      - name: Deploy to ECS for Backend
         run: |
-          echo "Tagging Docker image..."
-          docker tag backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/backend:latest
+          aws ecs update-service --cluster my-backend-cluster --service my-backend-service --force-new-deployment --region us-east-1
 
-      # Paso 4: Push Docker image to Amazon ECR
-      - name: Push Docker image to ECR
-        run: |
-          echo "Pushing Docker image to ECR..."
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/backend:latest        
-
+  # Frontend Job
   build-test-deploy-frontend:
     runs-on: ubuntu-latest
     steps:
-      # Paso 1: Checkout del código para el frontend
       - name: Checkout code for Frontend
         uses: actions/checkout@v4
 
-      # Paso 2: Configurar Node.js para el Frontend
       - name: Set up Node.js for Frontend
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Asegúrate de usar la versión de Node.js que necesitas
+          node-version: '20'
 
-      # Paso 3: Instalar dependencias del Frontend
       - name: Install dependencies for Frontend
         run: |
           cd prueba-frontend
           npm install
 
-      # Paso 4: Ejecutar pruebas del Frontend
       - name: Run tests for Frontend
         run: |
           cd prueba-frontend
           npm run test -- --watch=false --browsers=ChromeHeadless
 
-      # Paso 5: Análisis con SonarCloud
       - name: Run SonarCloud Analysis for Frontend
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: prueba-frontend
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}           
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Install Trivy
+      - name: Install Trivy for Frontend
         run: |
-           wget https://github.com/aquasecurity/trivy/releases/download/v0.50.1/trivy_0.50.1_Linux-64bit.tar.gz
-           tar zxvf trivy_0.50.1_Linux-64bit.tar.gz
-           sudo mv trivy /usr/local/bin/
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.50.1/trivy_0.50.1_Linux-64bit.tar.gz
+          tar zxvf trivy_0.50.1_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
 
-      - name: Scan dependencies with Trivy
+      - name: Scan Frontend dependencies with Trivy
         run: trivy fs --scanners vuln --format json --severity HIGH,CRITICAL --output trivy_report.json .
 
-      - name: List files after Trivy scan
+      - name: List files after Trivy scan for Frontend
         run: ls -la
 
-      - name: Upload Trivy JSON report as artifact
+      - name: Upload Trivy JSON report for Frontend
         uses: actions/upload-artifact@v4
         with:
-            name: trivy-json-report
+            name: trivy-json-report-frontend
             path: trivy_report.json
 
-      # Paso 6: Construir la aplicación Angular
       - name: Build Angular application for Frontend
         run: |
           cd prueba-frontend
           npm run build -- --configuration production
 
-      # Paso 7: Crear la imagen Docker para el Frontend
       - name: Build Docker image for Frontend
         run: |
-          docker build -t prueba-frontend:latest prueba-frontend          
+          docker build -t prueba-frontend:latest prueba-frontend
 
-     
-      - name: Scan Docker Image with Trivy
+      - name: Scan Docker Image with Trivy for Frontend
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: prueba-frontend:latest   
+          image-ref: prueba-frontend:latest
 
-       # Paso 14: Configuración de credenciales de AWS para interactuar con ECS
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      # Frontend Deployment (Only if no issues)
+      - name: Check for critical vulnerabilities in Frontend
+        run: |
+          vulnerabilities=$(jq '.[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")' trivy_report.json)
+          if [ -n "$vulnerabilities" ]; then
+            echo "Critical vulnerabilities detected in Frontend, aborting deployment."
+            exit 1
+          fi
+
+      - name: SonarCloud Quality Gate Check for Frontend
+        uses: SonarSource/sonarcloud-github-action@v2
         with:
-           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-           aws-region: us-east-1  
+          projectBaseDir: prueba-frontend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        continue-on-error: false
 
-#       # Paso 2: Log in to Amazon ECR
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-
-#       # Paso 3: Tag Docker image for ECR
-      - name: Tag Docker image for ECR
+      - name: Deploy to ECS for Frontend
         run: |
-           echo "Tagging Docker image..."
-           docker tag prueba-frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/prueba-frontend:latest
-
-#       # Paso 4: Push Docker image to Amazon ECR
-      - name: Push Docker image to ECR
-        run: |
-           echo "Pushing Docker image to ECR..."
-           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/prueba-frontend:latest             
+          aws ecs update-service --cluster my-frontend-cluster --service my-frontend-service --force-new-deployment --region us-east-1
