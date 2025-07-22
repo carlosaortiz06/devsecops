@@ -147,5 +147,8 @@ jobs:
         run: |
           docker build -t prueba-frontend:latest prueba-frontend          
 
-      - name: Build Docker Image
-        run: docker build -t prueba-frontend:latest prueba-frontend          
+     
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: prueba-frontend:latest   
