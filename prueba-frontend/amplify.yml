@@ -3,10 +3,15 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Cambiar al directorio de tu frontend
+        # Cambiar al directorio del frontend
         - cd prueba-frontend
-        # Instalar las dependencias
-        - npm install  # Instalar dependencias necesarias
+        # Instalar Chrome (para ChromeHeadless)
+        - apt-get update -y
+        - apt-get install -y google-chrome-stable
+        # Configurar la variable de entorno CHROME_BIN
+        - export CHROME_BIN=/usr/bin/google-chrome
+        # Instalar dependencias
+        - npm install
 
     build:
       commands:
@@ -16,10 +21,10 @@ frontend:
         - npm run build -- --configuration production
 
   artifacts:
-    baseDirectory: dist/prueba-frontend/browser  # Directorio donde están los archivos generados
+    baseDirectory: prueba-frontend/dist/prueba-frontend/browser  # Directorio donde están los archivos generados
     files:
       - '**/*'  # Incluir todos los archivos generados
 
   cache:
     paths:
-      - node_modules/**/*  # Caché para dependencias
+      - prueba-frontend/node_modules/**/*  # Caché para dependencias
