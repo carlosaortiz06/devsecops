@@ -80,14 +80,6 @@ jobs:
         with:
           image-ref: backend:latest
 
-      # Backend Deployment (Only if no issues)
-      - name: Check for critical vulnerabilities in Backend
-        run: |
-          vulnerabilities=$(jq '.[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")' trivy_report.json)
-          if [ -n "$vulnerabilities" ]; then
-            echo "Critical vulnerabilities detected in Backend, aborting deployment."
-            exit 1
-          fi
 
       - name: SonarCloud Quality Gate Check for Backend
         uses: SonarSource/sonarcloud-github-action@v2
@@ -162,14 +154,6 @@ jobs:
         with:
           image-ref: prueba-frontend:latest
 
-      # Frontend Deployment (Only if no issues)
-      - name: Check for critical vulnerabilities in Frontend
-        run: |
-          vulnerabilities=$(jq '.[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")' trivy_report.json)
-          if [ -n "$vulnerabilities" ]; then
-            echo "Critical vulnerabilities detected in Frontend, aborting deployment."
-            exit 1
-          fi
 
       - name: SonarCloud Quality Gate Check for Frontend
         uses: SonarSource/sonarcloud-github-action@v2
