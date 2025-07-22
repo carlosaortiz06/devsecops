@@ -81,13 +81,52 @@ jobs:
           image-ref: backend:latest
 
 
-      - name: SonarCloud Quality Gate Check for Backend
+      - name: SonarCloud Analysis for Backend
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: prueba-backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         continue-on-error: false
+
+      - name: Wait for SonarCloud to process the backend analysis
+        run: sleep 10
+
+      - name: Check SonarCloud Quality Gate for Backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          PROJECT_KEY="carlosaortiz06_devsecops"
+          STATUS=$(curl -s -u $SONAR_TOKEN: "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$PROJECT_KEY" | jq -r '.projectStatus.status')
+          echo "Quality Gate status: $STATUS"
+          if [ "$STATUS" != "OK" ]; then
+            echo "❌ Quality Gate failed. Deployment blocked."
+            exit 1
+          fi
+      # Paso 14: Configuración de credenciales de AWS para interactuar con ECS
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 
+
+      # Paso 2: Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # Paso 3: Tag Docker image for ECR
+      - name: Tag Docker image for ECR
+        run: |
+          echo "Tagging Docker image..."
+          docker tag backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/backend:latest
+
+      # Paso 4: Push Docker image to Amazon ECR
+      - name: Push Docker image to ECR
+        run: |
+          echo "Pushing Docker image to ECR..."
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/backend:latest    
+
 
       - name: Deploy to ECS for Backend
         run: |
@@ -155,11 +194,50 @@ jobs:
           image-ref: prueba-frontend:latest
 
 
-      - name: SonarCloud Quality Gate Check for Frontend
+      - name: SonarCloud Analysis for Frontend
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: prueba-frontend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         continue-on-error: false
+
+      - name: Wait for SonarCloud to process the analysis
+        run: sleep 10
+
+      - name: Check SonarCloud Quality Gate for Frontend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          PROJECT_KEY="carlosaortiz06_devsecops"
+          STATUS=$(curl -s -u $SONAR_TOKEN: "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$PROJECT_KEY" | jq -r '.projectStatus.status')
+          echo "Quality Gate status: $STATUS"
+          if [ "$STATUS" != "OK" ]; then
+            echo "❌ Quality Gate failed. Deployment blocked."
+            exit 1
+          fi
+       # Paso 14: Configuración de credenciales de AWS para interactuar con ECS
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: us-east-1  
+
+#       # Paso 2: Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+#       # Paso 3: Tag Docker image for ECR
+      - name: Tag Docker image for ECR
+        run: |
+           echo "Tagging Docker image..."
+           docker tag prueba-frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/prueba-frontend:latest
+
+#       # Paso 4: Push Docker image to Amazon ECR
+      - name: Push Docker image to ECR
+        run: |
+           echo "Pushing Docker image to ECR..."
+           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/prueba-frontend:latest 
+
 
