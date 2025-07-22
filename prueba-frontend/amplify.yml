@@ -1,0 +1,25 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Cambiar al directorio de tu frontend
+        - cd prueba-frontend
+        # Instalar las dependencias
+        - npm install  # Instalar dependencias necesarias
+
+    build:
+      commands:
+        # Ejecutar pruebas en modo headless con Chrome
+        - npm run test -- --watch=false --browsers=ChromeHeadless
+        # Construir la aplicación Angular en producción
+        - npm run build -- --configuration production
+
+  artifacts:
+    baseDirectory: dist/prueba-frontend/browser  # Directorio donde están los archivos generados
+    files:
+      - '**/*'  # Incluir todos los archivos generados
+
+  cache:
+    paths:
+      - node_modules/**/*  # Caché para dependencias
