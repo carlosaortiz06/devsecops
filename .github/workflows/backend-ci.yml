@@ -102,3 +102,39 @@ jobs:
         run: |
           echo "Pushing Docker image to ECR..."
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/backend:latest        
+
+  build-test-deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      # Paso 1: Checkout del código para el frontend
+      - name: Checkout code for Frontend
+        uses: actions/checkout@v4
+
+      # Paso 2: Configurar Node.js para el Frontend
+      - name: Set up Node.js for Frontend
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # Asegúrate de usar la versión de Node.js que necesitas
+
+      # Paso 3: Instalar dependencias del Frontend
+      - name: Install dependencies for Frontend
+        run: |
+          cd prueba-frontend
+          npm install
+
+      # Paso 4: Ejecutar pruebas del Frontend
+      - name: Run tests for Frontend
+        run: |
+          cd prueba-frontend
+          npm run test -- --watch=false --browsers=ChromeHeadless
+
+      # Paso 5: Construir la aplicación Angular
+      - name: Build Angular application for Frontend
+        run: |
+          cd prueba-frontend
+          npm run build -- --configuration production
+
+      # Paso 6: Crear la imagen Docker para el Frontend
+      - name: Build Docker image for Frontend
+        run: |
+          docker build -t prueba-frontend:latest prueba-frontend          
