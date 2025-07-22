@@ -1,18 +1,17 @@
 name: CI/CD - Frontend & Backend
 
-# on:
-#   push:
-#     paths:
-#       - 'prueba-backend/**'
-#       - 'backend-ci.yml'
-#       - 'prueba-frontend/**'
-#       - 'frontend-ci.yml'
-#   pull_request:
-#     paths:
-#       - 'prueba-backend/**'
-#       - 'backend-ci.yml'
-#       - 'prueba-frontend/**'
-#       - 'frontend-ci.yml'
+on:
+  push:
+    paths:
+      - 'prueba-backend/**'
+      - 'backend-ci.yml'
+      - 'prueba-frontend/**'
+
+  pull_request:
+    paths:
+      - 'prueba-backend/**'
+      - 'backend-ci.yml'
+      - 'prueba-frontend/**'
 
 jobs:
   # Backend Job
