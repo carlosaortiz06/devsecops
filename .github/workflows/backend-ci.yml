@@ -117,8 +117,15 @@ jobs:
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/backend:latest    
 
 
-      - name: Deploy to ECS for Backend
+      - name: Create ECS service
         run: |
-          aws ecs update-service --cluster my-backend-cluster --service my-backend-service --force-new-deployment --region us-east-1
+          aws ecs create-service \
+            --cluster my-backend-cluster1 \
+            --service-name my-backend-service \
+            --task-definition my-backend-task:1 \
+            --launch-type FARGATE \
+            --desired-count 1 \
+            --network-configuration "awsvpcConfiguration={subnets=[subnet-0fb2cdf8fd10f46d6],securityGroups=[sg-0e69af900bdabd272],assignPublicIp=ENABLED}" \
+            --region us-east-1
 
  
