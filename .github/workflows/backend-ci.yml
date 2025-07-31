@@ -128,4 +128,10 @@ jobs:
             --network-configuration "awsvpcConfiguration={subnets=[subnet-0fb2cdf8fd10f46d6],securityGroups=[sg-0e69af900bdabd272],assignPublicIp=ENABLED}" \
             --region us-east-1
 
+      - name: Force
+        run: |
+          aws ecs update-service --cluster my-backend-cluster1 --service my-backend-service --force-new-deployment --region us-east-1
+
+              
+
  
